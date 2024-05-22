@@ -118,6 +118,21 @@ function resourceCollectionAndManagement()
   return false
 end
 
+-- Adaptive defensive maneuvering function
+function adaptiveDefensiveManeuvering()
+  local player = LatestGameState.Players[ao.id]
+  for target, state in pairs(LatestGameState.Players) do
+    if target ~= ao.id and inRange(player.x, player.y, state.x, state.y, 2) and state.energy > player.energy then
+      print(colors.blue .. "Enemy too close. Performing defensive maneuver." .. colors.reset)
+      local direction = calculateOppositeDirection(player.x, player.y, state.x, state.y)
+      ao.send({Target = Game, Action = "PlayerMove", Player = ao.id, Direction = direction})
+      InAction = false
+      return true
+    end
+  end
+  return false
+end
+
 -- Calculate direction to move towards target position
 function calculateDirection(x1, y1, x2, y2)
   if x1 < x2 then
@@ -128,6 +143,19 @@ function calculateDirection(x1, y1, x2, y2)
     return "Down"
   else
     return "Up"
+  end
+end
+
+-- Calculate direction to move away from target position
+function calculateOppositeDirection(x1, y1, x2, y2)
+  if x1 < x2 then
+    return "Left"
+  elseif x1 > x2 then
+    return "Right"
+  elseif y1 < y2 then
+    return "Up"
+  else
+    return "Down"
   end
 end
 
@@ -196,6 +224,11 @@ Handlers.add(
     end
     print("Deciding next action.")
 
+    -- Check for adaptive defensive maneuvering
+    if adaptiveDefensiveManeuvering() then
+      return
+    end
+
     -- Check for team strategy coordination
     if collaborativeTeamStrategy() then
       return
@@ -237,4 +270,3 @@ Handlers.add(
     end
   end
 )
-
